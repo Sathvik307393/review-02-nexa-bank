@@ -198,10 +198,60 @@
     .upload-slot {
       min-height: 118px;
       padding: 14px;
-      border: 1px dashed rgba(148, 163, 184, 0.36);
+      border: 2px dashed rgba(148, 163, 184, 0.36);
       border-radius: 16px;
       background: rgba(15, 23, 42, 0.52);
       cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .upload-slot:hover {
+      border-color: rgba(56, 189, 248, 0.55);
+      background: rgba(56, 189, 248, 0.08);
+    }
+    .upload-slot.status-verified {
+      border-color: rgba(34, 197, 94, 0.6);
+      border-style: solid;
+      background: rgba(34, 197, 94, 0.08);
+    }
+    .upload-slot.status-rejected {
+      border-color: rgba(239, 68, 68, 0.6);
+      border-style: solid;
+      background: rgba(239, 68, 68, 0.08);
+    }
+    .upload-slot.status-submitted {
+      border-color: rgba(245, 158, 11, 0.6);
+      border-style: solid;
+      background: rgba(245, 158, 11, 0.08);
+    }
+    .upload-slot.status-pending {
+      border-color: rgba(56, 189, 248, 0.6);
+      border-style: solid;
+      background: rgba(56, 189, 248, 0.08);
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+    .status-badge.verified {
+      background: rgba(34, 197, 94, 0.25);
+      color: #86efac;
+    }
+    .status-badge.rejected {
+      background: rgba(239, 68, 68, 0.25);
+      color: #fca5a5;
+    }
+    .status-badge.submitted {
+      background: rgba(245, 158, 11, 0.25);
+      color: #fcd34d;
+    }
+    .status-badge.pending {
+      background: rgba(56, 189, 248, 0.25);
+      color: #bfdbfe;
     }
 
     #toast-container { position: fixed; right: 18px; bottom: 18px; z-index: 50; display: grid; gap: 10px; }
@@ -322,10 +372,10 @@
                 <p class="muted">Use filenames containing aadhaar, pan, passport, or image files for photo validation.</p>
                 <div id="kyc-uploaded-docs-list" class="muted"></div>
                 <div class="upload-slots">
-                  <div class="upload-slot" onclick="triggerSlotUpload('Aadhaar')"><strong>Aadhaar</strong><div id="slot-status-Aadhaar" class="muted">Click to upload</div></div>
-                  <div class="upload-slot" onclick="triggerSlotUpload('PAN')"><strong>PAN</strong><div id="slot-status-PAN" class="muted">Click to upload</div></div>
-                  <div class="upload-slot" onclick="triggerSlotUpload('Passport')"><strong>Passport</strong><div id="slot-status-Passport" class="muted">Click to upload</div></div>
-                  <div class="upload-slot" onclick="triggerSlotUpload('Photo')"><strong>Photo</strong><div id="slot-status-Photo" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-Aadhaar" onclick="triggerSlotUpload('Aadhaar')"><strong>Aadhaar</strong><div id="slot-status-Aadhaar" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-PAN" onclick="triggerSlotUpload('PAN')"><strong>PAN</strong><div id="slot-status-PAN" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-Passport" onclick="triggerSlotUpload('Passport')"><strong>Passport</strong><div id="slot-status-Passport" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-Photo" onclick="triggerSlotUpload('Photo')"><strong>Photo</strong><div id="slot-status-Photo" class="muted">Click to upload</div></div>
                 </div>
                 <input id="upload-file-Aadhaar" type="file" hidden onchange="handleSlotSelect('Aadhaar', this)">
                 <input id="upload-file-PAN" type="file" hidden onchange="handleSlotSelect('PAN', this)">
@@ -505,10 +555,22 @@
 
     function renderKycDocs(docs) {
       const list = document.getElementById('kyc-uploaded-docs-list');
-      list.innerHTML = docs.length ? docs.map(doc => `<div>${safe(doc.doc_type)} - ${safe(doc.status)} ${doc.ocr_details ? `(${safe(doc.ocr_details)})` : ''}</div>`).join('') : 'No KYC documents uploaded yet.';
+      list.innerHTML = docs.length ? docs.map(doc => {
+        const statusClass = doc.status === 'Verified' ? 'verified' : doc.status === 'Rejected' ? 'rejected' : doc.status === 'Submitted' ? 'submitted' : 'pending';
+        return `<div style="margin-bottom: 10px;"><strong>${safe(doc.doc_type)}</strong> <span class="status-badge ${statusClass}">${safe(doc.status)}</span> ${doc.ocr_details ? `<div class="muted" style="font-size: 0.8rem; margin-top: 4px;">${safe(doc.ocr_details)}</div>` : ''}</div>`;
+      }).join('') : 'No KYC documents uploaded yet.';
       ['Aadhaar', 'PAN', 'Passport', 'Photo'].forEach(type => {
         const doc = docs.find(item => item.doc_type === type);
-        document.getElementById(`slot-status-${type}`).textContent = doc ? doc.status : 'Click to upload';
+        const slot = document.getElementById(`upload-slot-${type}`);
+        const statusDiv = document.getElementById(`slot-status-${type}`);
+        if (doc) {
+          statusDiv.innerHTML = `<span class="status-badge ${doc.status === 'Verified' ? 'verified' : doc.status === 'Rejected' ? 'rejected' : doc.status === 'Submitted' ? 'submitted' : 'pending'}">${safe(doc.status)}</span>`;
+          const statusClass = `status-${doc.status.toLowerCase()}`;
+          slot.className = `upload-slot ${statusClass}`;
+        } else {
+          statusDiv.textContent = 'Click to upload';
+          slot.className = 'upload-slot';
+        }
       });
     }
 
@@ -518,13 +580,29 @@
 
     async function handleSlotSelect(type, input) {
       if (!input.files.length) return;
+      const slot = document.getElementById(`upload-slot-${type}`);
+      const statusDiv = document.getElementById(`slot-status-${type}`);
+      
+      // Show uploading state
+      slot.classList.remove('status-verified', 'status-rejected', 'status-submitted', 'status-pending');
+      slot.classList.add('status-pending');
+      statusDiv.innerHTML = '<span class="status-badge pending">Uploading...</span>';
+      
       const form = new FormData();
       form.append('doc_type', type);
       form.append('kyc_document', input.files[0]);
-      await requestJson('/api/kyc/upload', { method: 'POST', body: form });
-      toast(`${type} uploaded for validation.`);
-      input.value = '';
-      setTimeout(fetchDashboardData, 2600);
+      
+      try {
+        await requestJson('/api/kyc/upload', { method: 'POST', body: form });
+        toast(`✓ ${type} uploaded successfully for validation.`, 'success');
+        input.value = '';
+        setTimeout(fetchDashboardData, 2600);
+      } catch (error) {
+        slot.classList.add('status-rejected');
+        statusDiv.innerHTML = '<span class="status-badge rejected">Upload Failed</span>';
+        toast(`✗ Failed to upload ${type}: ${error.message}`, 'error');
+        input.value = '';
+      }
     }
 
     function toggleTransferFields() {
