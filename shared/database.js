@@ -43,7 +43,7 @@ function getDbConfig() {
   // Add SSL config for remote hosts
   const isRemoteHost = (dbConfig.host && dbConfig.host !== 'localhost' && dbConfig.host !== '127.0.0.1') ||
     (dbConfig.connectionString && !dbConfig.connectionString.includes('localhost') && !dbConfig.connectionString.includes('127.0.0.1'));
-  const sslEnabled = process.env.DB_SSL === 'true' || isRemoteHost;
+  const sslEnabled = process.env.DB_SSL === 'true' || (process.env.DB_SSL !== 'false' && isRemoteHost);
 
   if (sslEnabled) {
     dbConfig.ssl = { rejectUnauthorized: false };

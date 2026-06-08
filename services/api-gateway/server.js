@@ -46,11 +46,15 @@ console.log('[GATEWAY] Service URLs:', SERVICES);
 // Helper to proxy requests to microservices
 async function proxyRequest(req, res, serviceUrl, path) {
   try {
+    const forwardedHeaders = { ...req.headers };
+    delete forwardedHeaders.host;
+    delete forwardedHeaders['content-length'];
+
     const config = {
       method: req.method,
       url: `${serviceUrl}${path}`,
       headers: {
-        ...req.headers,
+        ...forwardedHeaders,
         'X-Forwarded-For': req.ip,
         'X-Forwarded-Proto': req.protocol
       },

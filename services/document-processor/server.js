@@ -12,8 +12,8 @@ const PORT = process.env.PORT || 3005;
 
 app.use(express.json());
 
-const { initDatabase, query, closeDatabase } = require('../../shared/database');
-const { readJsonDb, writeJsonDb } = require('../../shared/utils');
+const { initDatabase, query, closeDatabase } = require('./shared/database');
+const { readJsonDb, writeJsonDb } = require('./shared/utils');
 const fs = require('fs');
 const path = require('path');
 
