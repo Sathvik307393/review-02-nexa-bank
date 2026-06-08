@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS bank_kyc_docs (
   doc_type VARCHAR(50),
   status VARCHAR(50) DEFAULT 'Pending',
   ocr_details VARCHAR(1000),
+  extracted_data TEXT,
   uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

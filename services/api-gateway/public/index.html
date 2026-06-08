@@ -95,6 +95,37 @@
     }
 
     .form-control:focus { border-color: rgba(56, 189, 248, 0.75); }
+    
+    .password-wrapper {
+      position: relative;
+      width: 100%;
+    }
+
+    .password-wrapper .form-control {
+      padding-right: 40px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+      color: var(--accent);
+    }
+    
     .btn {
       width: 100%;
       border: 0;
@@ -319,7 +350,7 @@
         <form id="login-form">
           <div class="form-group"><label class="form-label">Email</label><input id="login-email" class="form-control" type="email" required></div>
           <div class="form-group"><label class="form-label">Role</label><select id="login-role" class="form-control"><option value="user">Customer</option><option value="admin">Admin</option></select></div>
-          <div class="form-group"><label class="form-label">Password</label><input id="login-password" class="form-control" type="password" required></div>
+          <div class="form-group"><label class="form-label">Password</label><div class="password-wrapper"><input id="login-password" class="form-control" type="password" required><button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password')">👁️</button></div></div>
           <button class="btn" type="submit">Sign In</button>
         </form>
         <p class="muted">New customer? <a href="#register" onclick="toggleAuthView('register')">Create an account</a></p>
@@ -331,8 +362,8 @@
         <form id="register-form">
           <div class="form-group"><label class="form-label">Full name</label><input id="register-name" class="form-control" required></div>
           <div class="form-group"><label class="form-label">Email</label><input id="register-email" class="form-control" type="email" required></div>
-          <div class="form-group"><label class="form-label">Password</label><input id="register-password" class="form-control" type="password" minlength="6" required></div>
-          <div class="form-group"><label class="form-label">Confirm password</label><input id="register-confirm" class="form-control" type="password" minlength="6" required></div>
+          <div class="form-group"><label class="form-label">Password</label><div class="password-wrapper"><input id="register-password" class="form-control" type="password" minlength="6" required><button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-password')">👁️</button></div></div>
+          <div class="form-group"><label class="form-label">Confirm password</label><div class="password-wrapper"><input id="register-confirm" class="form-control" type="password" minlength="6" required><button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-confirm')">👁️</button></div></div>
           <button class="btn" type="submit">Register</button>
         </form>
         <p class="muted">Already registered? <a href="#login" onclick="toggleAuthView('login')">Back to login</a></p>
@@ -505,6 +536,12 @@
     function showAuthView() {
       document.getElementById('portal-section').style.display = 'none';
       document.getElementById('auth-section').style.display = 'flex';
+    }
+
+    function togglePasswordVisibility(fieldId) {
+      const field = document.getElementById(fieldId);
+      const isPassword = field.type === 'password';
+      field.type = isPassword ? 'text' : 'password';
     }
 
     function switchTab(tabId) {
