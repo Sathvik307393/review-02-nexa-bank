@@ -1,0 +1,250 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: apex-postgres-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      POSTGRES_DB: ${DB_NAME:-apex_bank}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: apex-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth:3001
+      USER_SERVICE_URL: http://user:3002
+      TRANSACTION_SERVICE_URL: http://transactions:3003
+      KYC_SERVICE_URL: http://kyc:3004
+      AUDIT_SERVICE_URL: http://audit:3006
+      ADMIN_SERVICE_URL: http://admin:3007
+      DOC_PROCESSOR_URL: http://doc-processor:3005
+    depends_on:
+      - auth
+      - user
+      - transactions
+      - kyc
+      - audit
+      - admin
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Auth Service
+  auth:
+    build:
+      context: ./services/auth
+      dockerfile: Dockerfile
+    container_name: apex-auth-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3001
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+      JWT_SECRET: ${JWT_SECRET:-apex_banking_super_secret_cryptographic_key_9988}
+      AUDIT_SERVICE_URL: http://audit:3006
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # User Service
+  user:
+    build:
+      context: ./services/user
+      dockerfile: Dockerfile
+    container_name: apex-user-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3002
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Transactions Service
+  transactions:
+    build:
+      context: ./services/transactions
+      dockerfile: Dockerfile
+    container_name: apex-transactions-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3003
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # KYC Service
+  kyc:
+    build:
+      context: ./services/kyc
+      dockerfile: Dockerfile
+    container_name: apex-kyc-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3004
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - kyc_uploads:/app/uploads
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3004/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Document Processor Service
+  doc-processor:
+    build:
+      context: ./services/document-processor
+      dockerfile: Dockerfile
+    container_name: apex-doc-processor-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3005
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - kyc_uploads:/app/uploads
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Audit Service
+  audit:
+    build:
+      context: ./services/audit
+      dockerfile: Dockerfile
+    container_name: apex-audit-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3006
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3006/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # Admin Service
+  admin:
+    build:
+      context: ./services/admin
+      dockerfile: Dockerfile
+    container_name: apex-admin-service
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 3007
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-SecurePass123!@}
+      DB_NAME: ${DB_NAME:-apex_bank}
+      UPLOAD_DIR: /app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - kyc_uploads:/app/uploads
+    networks:
+      - apex-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3007/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postgres_data:
+  kyc_uploads:
+
+networks:
+  apex-network:
+    driver: bridge
