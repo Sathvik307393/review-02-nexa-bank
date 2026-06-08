@@ -424,58 +424,54 @@
           </div>
 
           <div id="tab-kyc" class="tab-pane">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-              <div>
-                <div class="card">
-                  <h3>Upload KYC Documents</h3>
-                  <p class="muted">Use filenames containing aadhaar, pan, passport, or image files for photo validation.</p>
-                  <div id="kyc-uploaded-docs-list" class="muted"></div>
-                  <div class="upload-slots">
-                    <div class="upload-slot" id="upload-slot-Aadhaar" onclick="triggerSlotUpload('Aadhaar')"><strong>Aadhaar</strong><div id="slot-status-Aadhaar" class="muted">Click to upload</div></div>
-                    <div class="upload-slot" id="upload-slot-PAN" onclick="triggerSlotUpload('PAN')"><strong>PAN</strong><div id="slot-status-PAN" class="muted">Click to upload</div></div>
-                    <div class="upload-slot" id="upload-slot-Passport" onclick="triggerSlotUpload('Passport')"><strong>Passport</strong><div id="slot-status-Passport" class="muted">Click to upload</div></div>
-                    <div class="upload-slot" id="upload-slot-Photo" onclick="triggerSlotUpload('Photo')"><strong>Photo</strong><div id="slot-status-Photo" class="muted">Click to upload</div></div>
+            <div>
+              <div class="card">
+                <h3>Upload KYC Documents</h3>
+                <p class="muted">Use filenames containing aadhaar, pan, passport, or image files for photo validation.</p>
+                <div id="kyc-uploaded-docs-list" class="muted"></div>
+                <div class="upload-slots">
+                  <div class="upload-slot" id="upload-slot-Aadhaar" onclick="triggerSlotUpload('Aadhaar')"><strong>Aadhaar</strong><div id="slot-status-Aadhaar" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-PAN" onclick="triggerSlotUpload('PAN')"><strong>PAN</strong><div id="slot-status-PAN" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-Passport" onclick="triggerSlotUpload('Passport')"><strong>Passport</strong><div id="slot-status-Passport" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" id="upload-slot-Photo" onclick="triggerSlotUpload('Photo')"><strong>Photo</strong><div id="slot-status-Photo" class="muted">Click to upload</div></div>
+                </div>
+                <input id="upload-file-Aadhaar" type="file" hidden onchange="handleSlotSelect('Aadhaar', this)">
+                <input id="upload-file-PAN" type="file" hidden onchange="handleSlotSelect('PAN', this)">
+                <input id="upload-file-Passport" type="file" hidden onchange="handleSlotSelect('Passport', this)">
+                <input id="upload-file-Photo" type="file" hidden accept="image/*" onchange="handleSlotSelect('Photo', this)">
+              </div>
+
+              <div class="card">
+                <h3>Extracted Information</h3>
+                <div id="kyc-extracted-info" style="font-size: 0.95rem; line-height: 1.6;">
+                  <div class="muted">Upload documents to extract information automatically.</div>
+                </div>
+                <div id="kyc-extraction-summary" style="margin-top: 16px; padding: 12px; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border-left: 3px solid rgba(56, 189, 248, 0.5); display: none;">
+                  <strong style="color: #bfdbfe;">Verification Status:</strong>
+                  <div id="kyc-verification-progress" style="margin-top: 8px; font-size: 0.9rem;">
+                    <div><span id="verify-aadhaar">○ Aadhaar</span></div>
+                    <div><span id="verify-pan">○ PAN</span></div>
+                    <div><span id="verify-passport">○ Passport</span></div>
+                    <div><span id="verify-photo">○ Photo</span></div>
                   </div>
-                  <input id="upload-file-Aadhaar" type="file" hidden onchange="handleSlotSelect('Aadhaar', this)">
-                  <input id="upload-file-PAN" type="file" hidden onchange="handleSlotSelect('PAN', this)">
-                  <input id="upload-file-Passport" type="file" hidden onchange="handleSlotSelect('Passport', this)">
-                  <input id="upload-file-Photo" type="file" hidden accept="image/*" onchange="handleSlotSelect('Photo', this)">
                 </div>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="card">
-                  <h3>Extracted Information</h3>
-                  <div id="kyc-extracted-info" style="font-size: 0.95rem; line-height: 1.6;">
-                    <div class="muted">Upload documents to extract information automatically.</div>
+              <div class="card">
+                <h3>Digital KYC Form</h3>
+                <form id="kyc-eform">
+                  <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Date of birth</label><input id="eform-dob" class="form-control" type="date" required></div>
+                    <div class="form-group"><label class="form-label">Tax ID</label><input id="eform-tax-id" class="form-control" required></div>
                   </div>
-                  <div id="kyc-extraction-summary" style="margin-top: 16px; padding: 12px; background: rgba(56, 189, 248, 0.08); border-radius: 8px; border-left: 3px solid rgba(56, 189, 248, 0.5); display: none;">
-                    <strong style="color: #bfdbfe;">Verification Status:</strong>
-                    <div id="kyc-verification-progress" style="margin-top: 8px; font-size: 0.9rem;">
-                      <div><span id="verify-aadhaar">○ Aadhaar</span></div>
-                      <div><span id="verify-pan">○ PAN</span></div>
-                      <div><span id="verify-passport">○ Passport</span></div>
-                      <div><span id="verify-photo">○ Photo</span></div>
-                    </div>
+                  <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Income</label><select id="eform-income" class="form-control" required><option value="">Select</option><option>Under INR 5 Lakhs</option><option>INR 5 Lakhs - INR 25 Lakhs</option><option>Over INR 25 Lakhs</option></select></div>
+                    <div class="form-group"><label class="form-label">Occupation</label><select id="eform-occupation" class="form-control" required><option value="">Select</option><option>Salaried Employee</option><option>Self-Employed / Business</option><option>Student</option><option>Retired</option><option>Professional</option></select></div>
                   </div>
-                </div>
-
-                <div class="card">
-                  <h3>Digital KYC Form</h3>
-                  <form id="kyc-eform">
-                    <div class="grid-2">
-                      <div class="form-group"><label class="form-label">Date of birth</label><input id="eform-dob" class="form-control" type="date" required></div>
-                      <div class="form-group"><label class="form-label">Tax ID</label><input id="eform-tax-id" class="form-control" required></div>
-                    </div>
-                    <div class="grid-2">
-                      <div class="form-group"><label class="form-label">Income</label><select id="eform-income" class="form-control" required><option value="">Select</option><option>Under INR 5 Lakhs</option><option>INR 5 Lakhs - INR 25 Lakhs</option><option>Over INR 25 Lakhs</option></select></div>
-                      <div class="form-group"><label class="form-label">Occupation</label><select id="eform-occupation" class="form-control" required><option value="">Select</option><option>Salaried Employee</option><option>Self-Employed / Business</option><option>Student</option><option>Retired</option><option>Professional</option></select></div>
-                    </div>
-                    <div class="form-group"><label class="form-label">Address</label><input id="eform-address" class="form-control" required></div>
-                    <div class="form-group"><label class="form-label">Signature</label><canvas id="signature-pad" width="650" height="150"></canvas></div>
-                    <div class="inline-actions"><button type="button" class="btn btn-secondary" onclick="clearSignaturePad()">Clear</button><button id="kyc-eform-submit-btn" class="btn" type="submit">Submit KYC Form</button></div>
-                  </form>
-                </div>
+                  <div class="form-group"><label class="form-label">Address</label><input id="eform-address" class="form-control" required></div>
+                  <div class="form-group"><label class="form-label">Signature</label><canvas id="signature-pad" width="650" height="150"></canvas></div>
+                  <div class="inline-actions"><button type="button" class="btn btn-secondary" onclick="clearSignaturePad()">Clear</button><button id="kyc-eform-submit-btn" class="btn" type="submit">Submit KYC Form</button></div>
+                </form>
               </div>
             </div>
           </div>
