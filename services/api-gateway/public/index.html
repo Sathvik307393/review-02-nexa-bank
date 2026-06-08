@@ -679,20 +679,35 @@
           <div style="color: ${statusColor}; font-weight: 700; margin-bottom: 4px;">
             <span style="font-size: 1.2rem;">${statusIcon}</span> ${safe(doc.doc_type)}
           </div>
-          <div class="muted" style="font-size: 0.85rem; margin-left: 24px;">${safe(details)}</div>
-        </div>`;
+          <div class="muted" style="font-size: 0.85rem; margin-left: 24px; line-height: 1.4;">`;
         
-        // Auto-fill form fields based on verified documents
-        if (doc.status === 'Verified') {
+        // Parse and display extracted data fields
+        if (doc.status === 'Verified' && doc.extracted_data) {
           try {
-            const extractedData = doc.extracted_data ? JSON.parse(doc.extracted_data) : {};
+            const extractedData = JSON.parse(doc.extracted_data);
+            extractedHTML += `<div>${safe(details)}</div>`;
+            
+            // Display extracted fields
+            Object.entries(extractedData).forEach(([key, value]) => {
+              if (key !== 'type' && key !== 'status') {
+                const displayKey = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                extractedHTML += `<div style="margin-top: 4px; color: #cbd5e1;"><strong>${displayKey}:</strong> ${safe(value)}</div>`;
+              }
+            });
+            
+            // Auto-fill form fields based on verified documents
             if (doc.doc_type === 'PAN' && extractedData.number) {
               document.getElementById('eform-tax-id').value = extractedData.number;
             }
           } catch (e) {
+            extractedHTML += `<div>${safe(details)}</div>`;
             console.warn('Could not parse extracted data:', e);
           }
+        } else {
+          extractedHTML += `<div>${safe(details)}</div>`;
         }
+        
+        extractedHTML += `</div></div>`;
       });
       
       extractedHTML += '</div>';

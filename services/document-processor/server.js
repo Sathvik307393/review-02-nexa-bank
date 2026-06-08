@@ -49,48 +49,75 @@ app.post('/api/validate', async (req, res) => {
         const nameLower = originalname.toLowerCase();
         if (docType === 'Aadhaar') {
           isValid = nameLower.includes('aadhar') || nameLower.includes('aadhaar');
-          reason = isValid ? 'Aadhaar verified successfully' : 'File must contain Aadhaar keywords.';
           if (isValid) {
+            // Generate proper 16-digit Aadhaar number (XXXX-XXXX-XXXX-XXXX)
+            const part1 = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const part2 = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const part3 = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const part4 = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const aadhaarNumber = `${part1}-${part2}-${part3}-${part4}`;
             extractedData = {
               type: 'Aadhaar ID',
-              number: '****-****-' + Math.random().toString().slice(-4),
+              number: aadhaarNumber,
+              registered_name: 'Sathvik Nandeesha',
+              dob: '1990-05-15',
+              gender: 'Male',
               status: 'Verified'
             };
-            reason = `Aadhaar matched: ${extractedData.number}`;
+            reason = `Aadhaar verified - ${aadhaarNumber}. Name: Sathvik Nandeesha, DOB: 1990-05-15`;
+          } else {
+            reason = 'File must contain Aadhaar keywords.';
           }
         } else if (docType === 'PAN') {
           isValid = nameLower.includes('pan') || nameLower.includes('tax');
-          reason = isValid ? 'PAN verified successfully' : 'File must contain PAN keywords.';
           if (isValid) {
+            // Generate proper PAN format (5 letters, 4 numbers, 1 letter)
+            const letters1 = String.fromCharCode(65 + Math.floor(Math.random() * 26), 65 + Math.floor(Math.random() * 26), 65 + Math.floor(Math.random() * 26), 65 + Math.floor(Math.random() * 26), 65 + Math.floor(Math.random() * 26));
+            const numbers = String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+            const letterLast = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+            const panNumber = `${letters1}${numbers}${letterLast}`;
             extractedData = {
               type: 'PAN Card',
-              number: 'A' + Math.random().toString().slice(2, 11).toUpperCase().slice(0, 9) + 'Z',
+              number: panNumber,
+              assessee_name: 'Sathvik Nandeesha',
+              pan_type: 'Individual',
               status: 'Verified'
             };
-            reason = `PAN matched: ${extractedData.number}`;
+            reason = `PAN verified - ${panNumber}. Assessee: Sathvik Nandeesha, Type: Individual`;
+          } else {
+            reason = 'File must contain PAN keywords.';
           }
         } else if (docType === 'Passport') {
           isValid = nameLower.includes('passport') || nameLower.includes('pass');
-          reason = isValid ? 'Passport verified successfully' : 'File must contain Passport keywords.';
           if (isValid) {
+            // Generate proper Passport format (1 letter, 7 digits)
+            const passportNumber = 'P' + String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
             extractedData = {
               type: 'Passport',
-              number: 'P' + Math.random().toString().slice(2, 10),
+              number: passportNumber,
+              name: 'Sathvik Nandeesha',
+              nationality: 'India',
+              expiry_date: '2030-12-31',
               status: 'Verified'
             };
-            reason = `Passport matched: ${extractedData.number}`;
+            reason = `Passport verified - ${passportNumber}. Name: Sathvik Nandeesha, Valid until: 2030-12-31`;
+          } else {
+            reason = 'File must contain Passport keywords.';
           }
         } else if (docType === 'Photo') {
           isValid = (mimeType && mimeType.startsWith('image/')) || originalname.match(/\.(jpg|jpeg|png)$/i) !== null;
-          reason = isValid ? 'Biometric validation successful' : 'Profile Photo must be JPG or PNG.';
           if (isValid) {
             extractedData = {
               type: 'Profile Photo',
-              faces: '1 face detected',
-              quality: 'High resolution',
+              faces_detected: 1,
+              face_quality: 'High',
+              image_resolution: '1920x1440',
+              liveness_score: '98%',
               status: 'Verified'
             };
-            reason = 'Face detection successful: 1 face, high quality';
+            reason = 'Biometric verified: 1 face detected, High quality, Liveness score 98%';
+          } else {
+            reason = 'Profile Photo must be JPG or PNG.';
           }
         } else {
           isValid = true;
