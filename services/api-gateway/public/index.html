@@ -746,6 +746,26 @@
       document.getElementById(`upload-file-${type}`).click();
     }
 
+    let pollingInterval = null;
+    
+    async function startKycPolling() {
+      // Stop any existing polling
+      if (pollingInterval) clearInterval(pollingInterval);
+      
+      // Poll for document updates every 1 second for 30 seconds
+      let pollCount = 0;
+      pollingInterval = setInterval(async () => {
+        pollCount++;
+        await fetchDashboardData();
+        
+        // Stop polling after 30 seconds
+        if (pollCount >= 30) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+      }, 1000);
+    }
+    
     async function handleSlotSelect(type, input) {
       if (!input.files.length) return;
       const slot = document.getElementById(`upload-slot-${type}`);
@@ -764,7 +784,8 @@
         await requestJson('/api/kyc/upload', { method: 'POST', body: form });
         toast(`✓ ${type} uploaded successfully for validation.`, 'success');
         input.value = '';
-        setTimeout(fetchDashboardData, 2600);
+        // Start polling for updates
+        startKycPolling();
       } catch (error) {
         slot.classList.add('status-rejected');
         statusDiv.innerHTML = '<span class="status-badge rejected">Upload Failed</span>';

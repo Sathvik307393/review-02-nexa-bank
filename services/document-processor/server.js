@@ -37,7 +37,7 @@ app.post('/api/validate', async (req, res) => {
 
     console.log(`[DOC_PROCESSOR] Starting validation for Doc ${docId} (${docType})`);
 
-    // Async processing with OCR
+    // Async processing with OCR - increased timeout to 3 seconds to allow OCR to complete
     setTimeout(async () => {
       try {
         const originalname = originalName || fileName || '';
