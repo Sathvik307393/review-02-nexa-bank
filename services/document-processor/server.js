@@ -6,6 +6,7 @@
 
 const express = require('express');
 const Tesseract = require('tesseract.js');
+const pdfParse = require('pdf-parse');
 require('dotenv').config();
 
 const app = express();
@@ -26,6 +27,20 @@ let isPg = false;
   isPg = connected;
   console.log('[DOC_PROCESSOR]', isPg ? 'Using PostgreSQL' : 'Using JSON database');
 })();
+
+/**
+ * Extract text from PDF file
+ */
+async function extractPdfText(filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const data = await pdfParse(fileBuffer);
+    return data.text || '';
+  } catch (error) {
+    console.error('[DOC_PROCESSOR] PDF extraction error:', error.message);
+    throw new Error(`PDF extraction failed: ${error.message}`);
+  }
+}
 
 /**
  * POST /api/validate
@@ -143,17 +158,88 @@ app.post('/api/validate', async (req, res) => {
             isValid = false;
             reason = `OCR processing failed: ${ocrError.message}. Please upload a clearer image.`;
           }
-        } else if (isPdf) {
-          // PDF files cannot be processed by Tesseract.js - require manual review or conversion
-          console.log(`[DOC_PROCESSOR] PDF file detected - skipping OCR processing`);
-          isValid = true;
-          reason = 'PDF document received. Manual verification required or please upload image format for automatic extraction.';
-          extractedData = {
-            type: `${docType} (PDF)`,
-            format: 'PDF',
-            status: 'Pending Manual Review',
-            note: 'PDF files require manual verification or conversion to image format for OCR extraction'
-          };
+        } else if (isPdf && filePath && fs.existsSync(filePath)) {
+          // Process PDF documents - extract text and parse
+          try {
+            console.log(`[DOC_PROCESSOR] Extracting text from PDF: ${filePath}`);
+            const extractedText = await extractPdfText(filePath);
+            const textUpper = extractedText.toUpperCase();
+            
+            console.log(`[DOC_PROCESSOR] PDF Text (first 200 chars): ${textUpper.substring(0, 200)}...`);
+            
+            if (docType === 'Aadhaar') {
+              // Look for 12-digit Aadhaar number in PDF text
+              const aadhaarMatch = textUpper.match(/(\d{4}\s*\d{4}\s*\d{4})|(\d{12})/);
+              if (aadhaarMatch) {
+                isValid = true;
+                const aadhaarNum = aadhaarMatch[0].replace(/\s/g, '');
+                const formatted = `${aadhaarNum.slice(0, 4)}-${aadhaarNum.slice(4, 8)}-${aadhaarNum.slice(8, 12)}`;
+                
+                const lines = textUpper.split('\n').map(l => l.trim());
+                const nameMatch = lines.find(l => l.length > 5 && l.length < 50 && l.match(/^[A-Z\s]+$/));
+                const dobMatch = textUpper.match(/(\d{2}[/-]\d{2}[/-]\d{4})|(\d{4}[/-]\d{2}[/-]\d{2})/);
+                
+                extractedData = {
+                  type: 'Aadhaar ID (PDF)',
+                  number: formatted,
+                  registered_name: nameMatch ? nameMatch : 'Name Not Found',
+                  dob: dobMatch ? dobMatch[0] : 'DOB Not Found',
+                  gender: textUpper.includes('MALE') ? 'Male' : textUpper.includes('FEMALE') ? 'Female' : 'Not Specified',
+                  status: 'Verified'
+                };
+                reason = `Aadhaar verified from PDF - ${formatted}. Name: ${extractedData.registered_name}, DOB: ${extractedData.dob}`;
+              } else {
+                isValid = false;
+                reason = 'Aadhaar number not found in PDF. Please ensure the document is clear and readable.';
+              }
+            } else if (docType === 'PAN') {
+              const panMatch = textUpper.match(/([A-Z]{5}[0-9]{4}[A-Z]{1})/);
+              if (panMatch) {
+                isValid = true;
+                const panNumber = panMatch[0];
+                const nameMatch = textUpper.split('\n').find(l => l.trim().length > 5 && l.trim().match(/^[A-Z\s]+$/));
+                extractedData = {
+                  type: 'PAN Card (PDF)',
+                  number: panNumber,
+                  assessee_name: nameMatch ? nameMatch.trim() : 'Name Not Found',
+                  pan_type: 'Individual',
+                  status: 'Verified'
+                };
+                reason = `PAN verified from PDF - ${panNumber}. Assessee: ${extractedData.assessee_name}`;
+              } else {
+                isValid = false;
+                reason = 'PAN number not found in PDF document.';
+              }
+            } else if (docType === 'Passport') {
+              const passportMatch = textUpper.match(/([A-Z]{1}[0-9]{7})|([A-Z0-9]{9})/);
+              if (passportMatch) {
+                isValid = true;
+                const passportNumber = passportMatch[0];
+                const nameMatch = textUpper.split('\n').find(l => l.trim().length > 5 && l.trim().match(/^[A-Z\s]+$/));
+                const expiryMatch = textUpper.match(/VALID UNTIL[:\s]*(\d{2}[/-]\d{2}[/-]\d{4})/i) || textUpper.match(/(\d{2}[/-]\d{2}[/-]\d{4})/);
+                
+                extractedData = {
+                  type: 'Passport (PDF)',
+                  number: passportNumber,
+                  name: nameMatch ? nameMatch.trim() : 'Name Not Found',
+                  nationality: textUpper.includes('INDIA') ? 'India' : 'Not Specified',
+                  expiry_date: expiryMatch ? expiryMatch[1] : 'Expiry Not Found',
+                  status: 'Verified'
+                };
+                reason = `Passport verified from PDF - ${passportNumber}. Name: ${extractedData.name}`;
+              } else {
+                isValid = false;
+                reason = 'Passport number not found in PDF document.';
+              }
+            } else {
+              isValid = true;
+              reason = 'PDF document processed successfully.';
+            }
+          } catch (pdfError) {
+            console.error('[DOC_PROCESSOR] PDF extraction error:', pdfError.message);
+            isValid = false;
+            reason = `PDF extraction failed: ${pdfError.message}. Please upload a valid PDF file.`;
+          }
         } else {
           // Fallback for non-image files
           isValid = true;
