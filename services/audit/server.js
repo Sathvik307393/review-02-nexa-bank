@@ -4,12 +4,14 @@
  */
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3006;
 
 app.use(express.json());
+app.use(cookieParser());
 
 const { initDatabase, query, closeDatabase } = require('./shared/database');
 const { authenticateToken } = require('./shared/middleware');

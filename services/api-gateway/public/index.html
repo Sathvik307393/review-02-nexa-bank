@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apex Premium Banking Portal</title>
+  <style>
+    :root {
+      --bg: #070b18;
+      --panel: rgba(17, 25, 48, 0.86);
+      --panel-strong: rgba(24, 35, 65, 0.96);
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --line: rgba(148, 163, 184, 0.18);
+      --accent: #38bdf8;
+      --accent-strong: #0ea5e9;
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --input: rgba(15, 23, 42, 0.78);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.28), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.14), transparent 30rem),
+        var(--bg);
+    }
+
+    a { color: inherit; }
+    .shell { min-height: 100vh; }
+    .auth-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+
+    .auth-card, .card, .topbar, .sidebar {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+      backdrop-filter: blur(18px);
+    }
+
+    .auth-card {
+      width: min(460px, 100%);
+      padding: 34px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--good));
+      color: #00111f;
+      font-weight: 900;
+    }
+
+    h1, h2, h3 { margin: 0; }
+    .muted { color: var(--muted); }
+    .form-group { margin: 16px 0; }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      background: var(--input);
+      outline: none;
+    }
+
+    .form-control:focus { border-color: rgba(56, 189, 248, 0.75); }
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #03111f;
+      background: linear-gradient(135deg, var(--accent), var(--good));
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      color: var(--text);
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid var(--line);
+    }
+
+    .btn-danger {
+      color: #fff;
+      background: rgba(239, 68, 68, 0.85);
+    }
+
+    .inline-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .inline-actions .btn { width: auto; }
+
+    #portal-section { display: none; padding: 24px; }
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      gap: 20px;
+      max-width: 1440px;
+      margin: 0 auto;
+    }
+
+    .sidebar { padding: 22px; height: calc(100vh - 48px); position: sticky; top: 24px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      margin-top: 8px;
+      border-radius: 12px;
+      color: #cbd5e1;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .nav-item.active, .nav-item:hover { background: rgba(56, 189, 248, 0.12); color: var(--text); }
+    .main { min-width: 0; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      margin-bottom: 20px;
+      padding: 18px 22px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+    }
+    .badge-good { background: rgba(34, 197, 94, 0.16); color: #86efac; }
+    .badge-bad { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .card { padding: 20px; margin-bottom: 16px; }
+    .metric { color: var(--muted); font-size: 0.86rem; }
+    .metric-value { margin-top: 10px; font-size: 1.9rem; font-weight: 900; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.9rem;
+    }
+    th { color: #cbd5e1; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .table-wrap { overflow-x: auto; }
+
+    .alert {
+      padding: 14px 16px;
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      background: rgba(56, 189, 248, 0.08);
+      border-radius: 16px;
+      color: #dbeafe;
+      margin-bottom: 16px;
+    }
+
+    .upload-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+    .upload-slot {
+      min-height: 118px;
+      padding: 14px;
+      border: 1px dashed rgba(148, 163, 184, 0.36);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.52);
+      cursor: pointer;
+    }
+
+    #toast-container { position: fixed; right: 18px; bottom: 18px; z-index: 50; display: grid; gap: 10px; }
+    .toast {
+      max-width: 360px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-strong);
+      color: var(--text);
+    }
+    .toast.error { border-color: rgba(239, 68, 68, 0.55); }
+    .toast.success { border-color: rgba(34, 197, 94, 0.55); }
+
+    canvas#signature-pad {
+      width: 100%;
+      height: 150px;
+      background: #fff;
+      border-radius: 12px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { height: auto; position: static; }
+      .grid-3, .grid-2, .upload-slots { grid-template-columns: 1fr; }
+      .topbar { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast-container"></div>
+  <div class="shell">
+    <section id="auth-section" class="auth-wrapper">
+      <div id="login-card" class="auth-card">
+        <div class="brand"><div class="brand-mark">A</div><div><h1>Apex Bank</h1><div class="muted">Premium banking portal</div></div></div>
+        <form id="login-form">
+          <div class="form-group"><label class="form-label">Email</label><input id="login-email" class="form-control" type="email" required></div>
+          <div class="form-group"><label class="form-label">Role</label><select id="login-role" class="form-control"><option value="user">Customer</option><option value="admin">Admin</option></select></div>
+          <div class="form-group"><label class="form-label">Password</label><input id="login-password" class="form-control" type="password" required></div>
+          <button class="btn" type="submit">Sign In</button>
+        </form>
+        <p class="muted">New customer? <a href="#register" onclick="toggleAuthView('register')">Create an account</a></p>
+        <p class="muted">Admin demo: admin@apex.com / admin123</p>
+      </div>
+
+      <div id="register-card" class="auth-card" style="display:none">
+        <div class="brand"><div class="brand-mark">A</div><div><h1>Create Account</h1><div class="muted">Start with an INR 1000 welcome balance</div></div></div>
+        <form id="register-form">
+          <div class="form-group"><label class="form-label">Full name</label><input id="register-name" class="form-control" required></div>
+          <div class="form-group"><label class="form-label">Email</label><input id="register-email" class="form-control" type="email" required></div>
+          <div class="form-group"><label class="form-label">Password</label><input id="register-password" class="form-control" type="password" minlength="6" required></div>
+          <div class="form-group"><label class="form-label">Confirm password</label><input id="register-confirm" class="form-control" type="password" minlength="6" required></div>
+          <button class="btn" type="submit">Register</button>
+        </form>
+        <p class="muted">Already registered? <a href="#login" onclick="toggleAuthView('login')">Back to login</a></p>
+      </div>
+    </section>
+
+    <section id="portal-section">
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="brand"><div class="brand-mark">A</div><div><h2>Apex</h2><div class="muted">Microservices portal</div></div></div>
+          <a class="nav-item active" data-tab="tab-overview" onclick="switchTab('tab-overview')">Overview</a>
+          <a class="nav-item" data-tab="tab-transactions" onclick="switchTab('tab-transactions')">Transactions</a>
+          <a class="nav-item" data-tab="tab-transfer" onclick="switchTab('tab-transfer')">Transfer</a>
+          <a class="nav-item" data-tab="tab-kyc" onclick="switchTab('tab-kyc')">KYC</a>
+          <a class="nav-item" data-tab="tab-security" onclick="switchTab('tab-security')">Security</a>
+          <a class="nav-item" data-tab="tab-admin" id="admin-nav-item" onclick="switchTab('tab-admin')" style="display:none">Admin</a>
+        </aside>
+
+        <main class="main">
+          <header class="topbar">
+            <div><h2 id="profile-name">Loading...</h2><div id="profile-email" class="muted">Loading...</div></div>
+            <div class="inline-actions"><span id="kyc-badge" class="badge">KYC: Pending</span><button class="btn btn-secondary" onclick="handleLogout()">Logout</button></div>
+          </header>
+
+          <div id="tab-overview" class="tab-pane active">
+            <div id="kyc-alert-banner" class="alert">Complete KYC to unlock the full portal experience.</div>
+            <div class="grid-3">
+              <div class="card"><div class="metric">Available Balance</div><div id="val-balance" class="metric-value">INR 0.00</div></div>
+              <div class="card"><div class="metric">Total Income</div><div id="val-income" class="metric-value">INR 0.00</div></div>
+              <div class="card"><div class="metric">Total Spending</div><div id="val-spending" class="metric-value">INR 0.00</div></div>
+            </div>
+            <div class="card"><h3>Recent Transactions</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Remark</th><th>Status</th></tr></thead><tbody id="table-recent-body"></tbody></table></div></div>
+          </div>
+
+          <div id="tab-transactions" class="tab-pane">
+            <div class="card">
+              <h3>Transaction History</h3>
+              <div class="grid-2">
+                <div class="form-group"><label class="form-label">Start date</label><input id="filter-start-date" class="form-control" type="date"></div>
+                <div class="form-group"><label class="form-label">End date</label><input id="filter-end-date" class="form-control" type="date"></div>
+              </div>
+              <div class="inline-actions"><button class="btn" onclick="loadAllTransactions()">Apply Filter</button><button class="btn btn-secondary" onclick="downloadCSVStatement()">Download CSV</button></div>
+              <div class="table-wrap"><table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Sender</th><th>Recipient</th><th>Remark</th><th>Status</th></tr></thead><tbody id="table-full-body"></tbody></table></div>
+            </div>
+          </div>
+
+          <div id="tab-transfer" class="tab-pane">
+            <div class="card">
+              <h3>Submit Transaction</h3>
+              <form id="tx-form">
+                <div class="form-group"><label class="form-label">Type</label><select id="tx-type" class="form-control" onchange="toggleTransferFields()"><option>Deposit</option><option>Withdrawal</option><option>Transfer</option></select></div>
+                <div id="tx-recipient-group" class="form-group" style="display:none"><label class="form-label">Recipient email</label><input id="tx-recipient" class="form-control" type="email"></div>
+                <div class="form-group"><label class="form-label">Amount</label><input id="tx-amount" class="form-control" type="number" min="1" step="0.01" required></div>
+                <div class="form-group"><label class="form-label">Remark</label><input id="tx-remark" class="form-control"></div>
+                <button class="btn" type="submit">Submit Transaction</button>
+              </form>
+            </div>
+          </div>
+
+          <div id="tab-kyc" class="tab-pane">
+            <div class="grid-2">
+              <div class="card">
+                <h3>Upload KYC Documents</h3>
+                <p class="muted">Use filenames containing aadhaar, pan, passport, or image files for photo validation.</p>
+                <div id="kyc-uploaded-docs-list" class="muted"></div>
+                <div class="upload-slots">
+                  <div class="upload-slot" onclick="triggerSlotUpload('Aadhaar')"><strong>Aadhaar</strong><div id="slot-status-Aadhaar" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" onclick="triggerSlotUpload('PAN')"><strong>PAN</strong><div id="slot-status-PAN" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" onclick="triggerSlotUpload('Passport')"><strong>Passport</strong><div id="slot-status-Passport" class="muted">Click to upload</div></div>
+                  <div class="upload-slot" onclick="triggerSlotUpload('Photo')"><strong>Photo</strong><div id="slot-status-Photo" class="muted">Click to upload</div></div>
+                </div>
+                <input id="upload-file-Aadhaar" type="file" hidden onchange="handleSlotSelect('Aadhaar', this)">
+                <input id="upload-file-PAN" type="file" hidden onchange="handleSlotSelect('PAN', this)">
+                <input id="upload-file-Passport" type="file" hidden onchange="handleSlotSelect('Passport', this)">
+                <input id="upload-file-Photo" type="file" hidden accept="image/*" onchange="handleSlotSelect('Photo', this)">
+              </div>
+
+              <div class="card">
+                <h3>Digital KYC Form</h3>
+                <form id="kyc-eform">
+                  <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Date of birth</label><input id="eform-dob" class="form-control" type="date" required></div>
+                    <div class="form-group"><label class="form-label">Tax ID</label><input id="eform-tax-id" class="form-control" required></div>
+                  </div>
+                  <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Income</label><select id="eform-income" class="form-control" required><option value="">Select</option><option>Under INR 5 Lakhs</option><option>INR 5 Lakhs - INR 25 Lakhs</option><option>Over INR 25 Lakhs</option></select></div>
+                    <div class="form-group"><label class="form-label">Occupation</label><select id="eform-occupation" class="form-control" required><option value="">Select</option><option>Salaried Employee</option><option>Self-Employed / Business</option><option>Student</option><option>Retired</option><option>Professional</option></select></div>
+                  </div>
+                  <div class="form-group"><label class="form-label">Address</label><input id="eform-address" class="form-control" required></div>
+                  <div class="form-group"><label class="form-label">Signature</label><canvas id="signature-pad" width="650" height="150"></canvas></div>
+                  <div class="inline-actions"><button type="button" class="btn btn-secondary" onclick="clearSignaturePad()">Clear</button><button id="kyc-eform-submit-btn" class="btn" type="submit">Submit KYC Form</button></div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-security" class="tab-pane">
+            <div class="card"><h3>Security Audit Trail</h3><div class="table-wrap"><table><thead><tr><th>Date</th><th>Action</th><th>Details</th><th>IP</th></tr></thead><tbody id="table-security-logs"></tbody></table></div></div>
+          </div>
+
+          <div id="tab-admin" class="tab-pane">
+            <div class="alert">Admin control center for testing users, transactions, and KYC status.</div>
+            <div class="card"><h3>Users</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Balance</th><th>KYC</th><th>Docs</th><th>Action</th></tr></thead><tbody id="table-admin-users"></tbody></table></div></div>
+            <div class="card"><h3>All Transactions</h3><div class="table-wrap"><table><thead><tr><th>ID</th><th>User</th><th>Type</th><th>Amount</th><th>Date</th><th>Remark</th></tr></thead><tbody id="table-admin-txs"></tbody></table></div></div>
+            <div class="card"><h3>Danger Zone</h3><button id="btn-reset-db" class="btn btn-danger" onclick="resetDatabase()">Reset All Test Data</button></div>
+          </div>
+        </main>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let signatureDrawn = false;
+
+    const money = value => `INR ${Number(value || 0).toFixed(2)}`;
+    const safe = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function toast(message, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = message;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(() => el.remove(), 4200);
+    }
+
+    async function requestJson(url, options = {}) {
+      const res = await fetch(url, {
+        credentials: 'include',
+        headers: options.body instanceof FormData ? undefined : { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        ...options
+      });
+      const contentType = res.headers.get('content-type') || '';
+      const data = contentType.includes('application/json') ? await res.json() : await res.text();
+      if (!res.ok) throw new Error(data.error || data.message || data || 'Request failed');
+      return data;
+    }
+
+    function toggleAuthView(view) {
+      document.getElementById('login-card').style.display = view === 'register' ? 'none' : 'block';
+      document.getElementById('register-card').style.display = view === 'register' ? 'block' : 'none';
+      location.hash = view === 'register' ? '#register' : '#login';
+    }
+
+    function showPortalView() {
+      document.getElementById('auth-section').style.display = 'none';
+      document.getElementById('portal-section').style.display = 'block';
+    }
+
+    function showAuthView() {
+      document.getElementById('portal-section').style.display = 'none';
+      document.getElementById('auth-section').style.display = 'flex';
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(tabId)?.classList.add('active');
+      document.querySelector(`[data-tab="${tabId}"]`)?.classList.add('active');
+      if (tabId === 'tab-overview') fetchDashboardData();
+      if (tabId === 'tab-transactions') loadAllTransactions();
+      if (tabId === 'tab-security') loadSecurityLogs();
+      if (tabId === 'tab-admin') loadAdminData();
+    }
+
+    async function fetchDashboardData() {
+      const data = await requestJson('/api/dashboard-data');
+      currentUser = data.user;
+      document.getElementById('profile-name').textContent = data.user.name;
+      document.getElementById('profile-email').textContent = data.user.email;
+      document.getElementById('admin-nav-item').style.display = data.user.role === 'admin' ? 'flex' : 'none';
+      document.getElementById('val-balance').textContent = money(data.stats.balance);
+      document.getElementById('val-income').textContent = money(data.stats.totalIncome);
+      document.getElementById('val-spending').textContent = money(data.stats.totalSpending);
+
+      const badge = document.getElementById('kyc-badge');
+      badge.textContent = `KYC: ${data.user.kyc_status}`;
+      badge.className = `badge ${data.user.kyc_status === 'Verified' ? 'badge-good' : ''}`;
+      document.getElementById('kyc-alert-banner').style.display = data.user.kyc_status === 'Verified' ? 'none' : 'block';
+      renderRows('table-recent-body', data.recentTransactions, recentTransactionRow, 5);
+      renderKycDocs(data.uploadedDocs || []);
+      showPortalView();
+    }
+
+    function transactionRow(tx) {
+      return `<tr><td>${safe(new Date(tx.created_at).toLocaleString())}</td><td>${safe(tx.type)}</td><td>${money(tx.amount)}</td><td>${safe(tx.sender_email || '')}</td><td>${safe(tx.recipient_email || '')}</td><td>${safe(tx.remark || '')}</td><td>${safe(tx.status || '')}</td></tr>`;
+    }
+
+    function recentTransactionRow(tx) {
+      return `<tr><td>${safe(new Date(tx.created_at).toLocaleString())}</td><td>${safe(tx.type)}</td><td>${money(tx.amount)}</td><td>${safe(tx.remark || '')}</td><td>${safe(tx.status || '')}</td></tr>`;
+    }
+
+    function renderRows(id, rows, rowRenderer, colSpan) {
+      const body = document.getElementById(id);
+      if (!rows || rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="${colSpan}" class="muted">No records found.</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map(rowRenderer).join('');
+    }
+
+    async function loadAllTransactions() {
+      const startDate = document.getElementById('filter-start-date').value;
+      const endDate = document.getElementById('filter-end-date').value;
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      const data = await requestJson(`/api/transactions?${params}`);
+      renderRows('table-full-body', data.transactions, transactionRow, 7);
+    }
+
+    function downloadCSVStatement() {
+      const startDate = document.getElementById('filter-start-date').value;
+      const endDate = document.getElementById('filter-end-date').value;
+      const params = new URLSearchParams();
+      if (startDate) params.set('startDate', startDate);
+      if (endDate) params.set('endDate', endDate);
+      window.location.href = `/api/transactions/statement?${params}`;
+    }
+
+    async function loadSecurityLogs() {
+      const data = await requestJson('/api/security/logs');
+      renderRows('table-security-logs', data.logs, log => `<tr><td>${safe(new Date(log.created_at).toLocaleString())}</td><td>${safe(log.action)}</td><td>${safe(log.details)}</td><td>${safe(log.ip_address)}</td></tr>`, 4);
+    }
+
+    async function loadAdminData() {
+      const data = await requestJson('/api/admin/data');
+      renderRows('table-admin-users', data.users, user => {
+        const docs = (user.documents || []).filter(Boolean).map(doc => `${safe(doc.doc_type)}: ${safe(doc.status)}`).join('<br>');
+        return `<tr><td>${user.id}</td><td>${safe(user.name)}</td><td>${safe(user.email)}</td><td>${money(user.balance)}</td><td>${safe(user.kyc_status)}</td><td>${docs || '-'}</td><td><button class="btn btn-secondary" onclick="updateKycStatus(${user.id}, 'Verified')">Verify</button></td></tr>`;
+      }, 7);
+      renderRows('table-admin-txs', data.transactions, tx => `<tr><td>${tx.id}</td><td>${safe(tx.user_email)}</td><td>${safe(tx.type)}</td><td>${money(tx.amount)}</td><td>${safe(new Date(tx.created_at).toLocaleString())}</td><td>${safe(tx.remark || '')}</td></tr>`, 6);
+    }
+
+    async function updateKycStatus(userId, status) {
+      await requestJson('/api/admin/kyc-status', { method: 'POST', body: JSON.stringify({ userId, status }) });
+      toast('KYC status updated.');
+      loadAdminData();
+    }
+
+    async function resetDatabase() {
+      if (!confirm('Reset all non-admin users, transactions, KYC docs, and audit logs?')) return;
+      const data = await requestJson('/api/admin/reset-data', { method: 'POST' });
+      toast(data.message);
+      loadAdminData();
+    }
+
+    function renderKycDocs(docs) {
+      const list = document.getElementById('kyc-uploaded-docs-list');
+      list.innerHTML = docs.length ? docs.map(doc => `<div>${safe(doc.doc_type)} - ${safe(doc.status)} ${doc.ocr_details ? `(${safe(doc.ocr_details)})` : ''}</div>`).join('') : 'No KYC documents uploaded yet.';
+      ['Aadhaar', 'PAN', 'Passport', 'Photo'].forEach(type => {
+        const doc = docs.find(item => item.doc_type === type);
+        document.getElementById(`slot-status-${type}`).textContent = doc ? doc.status : 'Click to upload';
+      });
+    }
+
+    function triggerSlotUpload(type) {
+      document.getElementById(`upload-file-${type}`).click();
+    }
+
+    async function handleSlotSelect(type, input) {
+      if (!input.files.length) return;
+      const form = new FormData();
+      form.append('doc_type', type);
+      form.append('kyc_document', input.files[0]);
+      await requestJson('/api/kyc/upload', { method: 'POST', body: form });
+      toast(`${type} uploaded for validation.`);
+      input.value = '';
+      setTimeout(fetchDashboardData, 2600);
+    }
+
+    function toggleTransferFields() {
+      const isTransfer = document.getElementById('tx-type').value === 'Transfer';
+      document.getElementById('tx-recipient-group').style.display = isTransfer ? 'block' : 'none';
+      document.getElementById('tx-recipient').required = isTransfer;
+    }
+
+    async function handleLogout() {
+      await requestJson('/api/auth/logout', { method: 'POST', body: '{}' });
+      showAuthView();
+      toast('Logged out.');
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        await requestJson('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: document.getElementById('login-email').value,
+            password: document.getElementById('login-password').value,
+            role: document.getElementById('login-role').value
+          })
+        });
+        toast('Login successful.');
+        await fetchDashboardData();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+
+    document.getElementById('register-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        await requestJson('/api/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: document.getElementById('register-name').value,
+            email: document.getElementById('register-email').value,
+            password: document.getElementById('register-password').value,
+            confirmPassword: document.getElementById('register-confirm').value
+          })
+        });
+        toast('Registration successful.');
+        await fetchDashboardData();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+
+    document.getElementById('tx-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        await requestJson('/api/transactions', {
+          method: 'POST',
+          body: JSON.stringify({
+            type: document.getElementById('tx-type').value,
+            amount: document.getElementById('tx-amount').value,
+            targetEmail: document.getElementById('tx-recipient').value,
+            remark: document.getElementById('tx-remark').value
+          })
+        });
+        toast('Transaction processed.');
+        event.target.reset();
+        toggleTransferFields();
+        await fetchDashboardData();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+
+    document.getElementById('kyc-eform').addEventListener('submit', async event => {
+      event.preventDefault();
+      try {
+        if (!signatureDrawn) throw new Error('Please draw your signature.');
+        const signatureData = document.getElementById('signature-pad').toDataURL('image/png');
+        await requestJson('/api/kyc/form-submit', {
+          method: 'POST',
+          body: JSON.stringify({
+            dob: document.getElementById('eform-dob').value,
+            taxId: document.getElementById('eform-tax-id').value,
+            income: document.getElementById('eform-income').value,
+            occupation: document.getElementById('eform-occupation').value,
+            address: document.getElementById('eform-address').value,
+            signatureData
+          })
+        });
+        toast('KYC form submitted.');
+        await fetchDashboardData();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+
+    function setupSignaturePad() {
+      const canvas = document.getElementById('signature-pad');
+      const ctx = canvas.getContext('2d');
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      let drawing = false;
+      const position = event => {
+        const rect = canvas.getBoundingClientRect();
+        const point = event.touches ? event.touches[0] : event;
+        return { x: (point.clientX - rect.left) * (canvas.width / rect.width), y: (point.clientY - rect.top) * (canvas.height / rect.height) };
+      };
+      const start = event => { drawing = true; signatureDrawn = true; const p = position(event); ctx.beginPath(); ctx.moveTo(p.x, p.y); event.preventDefault(); };
+      const move = event => { if (!drawing) return; const p = position(event); ctx.lineTo(p.x, p.y); ctx.stroke(); event.preventDefault(); };
+      const end = () => { drawing = false; };
+      canvas.addEventListener('mousedown', start);
+      canvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      canvas.addEventListener('touchstart', start, { passive: false });
+      canvas.addEventListener('touchmove', move, { passive: false });
+      canvas.addEventListener('touchend', end);
+    }
+
+    function clearSignaturePad() {
+      const canvas = document.getElementById('signature-pad');
+      canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+      signatureDrawn = false;
+    }
+
+    window.addEventListener('load', async () => {
+      setupSignaturePad();
+      if (location.hash === '#register') toggleAuthView('register');
+      try {
+        await fetchDashboardData();
+      } catch {
+        showAuthView();
+      }
+    });
+  </script>
+</body>
+</html>

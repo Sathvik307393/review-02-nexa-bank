@@ -36,7 +36,56 @@ let isPg = false;
   } else {
     console.log('[AUTH] Using JSON file database');
   }
+
+  await ensureAdminUser();
 })();
+
+async function ensureAdminUser() {
+  try {
+    const adminEmail = 'admin@apex.com';
+    const passwordHash = await bcrypt.hash('admin123', 10);
+
+    if (isPg) {
+      const existing = await query('SELECT id FROM bank_users WHERE LOWER(email) = LOWER($1)', [adminEmail]);
+      if (existing.rows[0]) {
+        await query(
+          'UPDATE bank_users SET password_hash = $1, role = $2, kyc_status = $3 WHERE id = $4',
+          [passwordHash, 'admin', 'Verified', existing.rows[0].id]
+        );
+      } else {
+        await query(
+          'INSERT INTO bank_users (name, email, password_hash, balance, kyc_status, role, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+          ['System Admin', adminEmail, passwordHash, 0, 'Verified', 'admin']
+        );
+      }
+    } else {
+      const data = readJsonDb(JSON_DB_PATH) || { users: [], transactions: [] };
+      data.users = data.users || [];
+      const existing = data.users.find(u => u.email.toLowerCase() === adminEmail);
+      if (existing) {
+        existing.password_hash = passwordHash;
+        existing.role = 'admin';
+        existing.kyc_status = 'Verified';
+      } else {
+        data.users.push({
+          id: Math.max(0, ...data.users.map(u => u.id)) + 1,
+          name: 'System Admin',
+          email: adminEmail,
+          password_hash: passwordHash,
+          balance: 0,
+          kyc_status: 'Verified',
+          role: 'admin',
+          created_at: new Date().toISOString()
+        });
+      }
+      writeJsonDb(JSON_DB_PATH, data);
+    }
+
+    console.log('[AUTH] Admin user is ready');
+  } catch (error) {
+    console.warn('[AUTH] Admin seed failed:', error.message);
+  }
+}
 
 // ===== ROUTES =====
 

@@ -32,14 +32,14 @@ let isPg = false;
  */
 app.post('/api/validate', async (req, res) => {
   try {
-    const { docId, userId, docType, fileName, filePath } = req.body;
+    const { docId, userId, docType, fileName, filePath, originalName, mimeType } = req.body;
 
     console.log(`[DOC_PROCESSOR] Starting validation for Doc ${docId} (${docType})`);
 
     // Simulate async processing
     setTimeout(async () => {
       try {
-        const originalname = fileName || '';
+        const originalname = originalName || fileName || '';
         
         // Simple validation based on filename
         let isValid = false;
@@ -56,7 +56,7 @@ app.post('/api/validate', async (req, res) => {
           isValid = nameLower.includes('passport') || nameLower.includes('pass');
           reason = isValid ? 'Successfully verified Passport format.' : 'File must contain Passport keywords.';
         } else if (docType === 'Photo') {
-          isValid = originalname.match(/\.(jpg|jpeg|png)$/i) !== null;
+          isValid = (mimeType && mimeType.startsWith('image/')) || originalname.match(/\.(jpg|jpeg|png)$/i) !== null;
           reason = isValid ? 'Biometric validation successful.' : 'Profile Photo must be JPG or PNG.';
         } else {
           isValid = true;

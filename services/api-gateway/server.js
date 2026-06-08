@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -23,6 +24,7 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN || '*',
   credentials: true
 }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate limiting
 const limiter = rateLimit({
@@ -58,7 +60,9 @@ async function proxyRequest(req, res, serviceUrl, path) {
         'X-Forwarded-For': req.ip,
         'X-Forwarded-Proto': req.protocol
       },
-      withCredentials: true
+      withCredentials: true,
+      responseType: 'arraybuffer',
+      validateStatus: () => true
     };
 
     // Include body for POST/PUT/PATCH
@@ -83,13 +87,55 @@ async function proxyRequest(req, res, serviceUrl, path) {
       res.setHeader('set-cookie', response.headers['set-cookie']);
     }
 
-    res.status(response.status).json(response.data);
+    if (response.headers['content-type']) {
+      res.setHeader('content-type', response.headers['content-type']);
+    }
+
+    if (response.headers['content-disposition']) {
+      res.setHeader('content-disposition', response.headers['content-disposition']);
+    }
+
+    res.status(response.status).send(Buffer.from(response.data));
   } catch (error) {
     const statusCode = error.response?.status || 500;
     const errorData = error.response?.data || { error: 'Service unavailable' };
     
     console.error(`[GATEWAY ERROR] ${req.method} ${path}:`, error.message);
     res.status(statusCode).json(errorData);
+  }
+}
+
+async function streamProxyRequest(req, res, serviceUrl, path) {
+  try {
+    const forwardedHeaders = { ...req.headers };
+    delete forwardedHeaders.host;
+
+    const response = await axios({
+      method: req.method,
+      url: `${serviceUrl}${path}`,
+      headers: {
+        ...forwardedHeaders,
+        'X-Forwarded-For': req.ip,
+        'X-Forwarded-Proto': req.protocol
+      },
+      data: req,
+      responseType: 'stream',
+      validateStatus: () => true
+    });
+
+    if (response.headers['set-cookie']) {
+      res.setHeader('set-cookie', response.headers['set-cookie']);
+    }
+
+    if (response.headers['content-type']) {
+      res.setHeader('content-type', response.headers['content-type']);
+    }
+
+    res.status(response.status);
+    response.data.pipe(res);
+  } catch (error) {
+    console.error(`[GATEWAY ERROR] ${req.method} ${path}:`, error.message);
+    res.status(500).json({ error: 'Service unavailable' });
   }
 }
 
@@ -130,7 +176,7 @@ app.get('/api/transactions/statement', (req, res) => {
 
 // ===== KYC ROUTES =====
 app.post('/api/kyc/upload', (req, res) => {
-  proxyRequest(req, res, SERVICES.KYC, '/api/kyc/upload');
+  streamProxyRequest(req, res, SERVICES.KYC, '/api/kyc/upload');
 });
 
 app.post('/api/kyc/validate', (req, res) => {
@@ -165,7 +211,7 @@ app.post('/api/admin/reset-data', (req, res) => {
 
 // ===== FRONTEND ROUTES (Serve static frontend) =====
 app.get('/', (req, res) => {
-  proxyRequest(req, res, SERVICES.USER, '/');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Health check endpoint

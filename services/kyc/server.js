@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -13,6 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3004;
 
 app.use(express.json());
+app.use(cookieParser());
 
 const { initDatabase, query, closeDatabase } = require('./shared/database');
 const { authenticateToken } = require('./shared/middleware');
@@ -109,7 +111,9 @@ app.post('/api/kyc/upload', authenticateToken, (req, res) => {
         userId: req.user.id,
         docType: docType,
         fileName: req.file.filename,
-        filePath: filePath
+        filePath: filePath,
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype
       }).catch(err => console.warn('[KYC] Doc processor call failed:', err.message));
 
       res.json({
@@ -194,7 +198,7 @@ app.post('/api/kyc/form-submit', authenticateToken, async (req, res) => {
           'INSERT INTO bank_kyc_forms (user_id, dob, address, tax_id, income, occupation, signature_data, submitted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())',
           [req.user.id, dob, address, taxId, income, occupation, signatureData]
         );
-        await query('UPDATE bank_users SET kyc_status = $1 WHERE id = $2', [req.user.id, 'Submitted']);
+        await query('UPDATE bank_users SET kyc_status = $1 WHERE id = $2', ['Submitted', req.user.id]);
         await query('COMMIT');
       } catch (e) {
         await query('ROLLBACK');

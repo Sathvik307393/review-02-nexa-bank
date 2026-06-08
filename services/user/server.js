@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
@@ -11,6 +12,7 @@ const PORT = process.env.PORT || 3002;
 
 // Middleware
 app.use(express.json());
+app.use(cookieParser());
 
 // Import shared modules
 const { initDatabase, query, isDatabasePostgres, closeDatabase } = require('./shared/database');
